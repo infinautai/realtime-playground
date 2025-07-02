@@ -2,6 +2,10 @@
 
 A real-time voice conversation application with AI-powered transcription and response capabilities. Built with Next.js, TypeScript, and WebSocket technology for seamless voice interactions.
 
+## Project Purpose
+
+In the past half year, omni-modal models and speech-to-speech models such as Qwen Omni, Ming-Omni, and Qwen Audio have been released one after another, highlighting that omni-modal models are currently a major focus in AI research. However, there is still a lack of open-source tools for real-time API interaction. This project is inspired by the OpenAI realtime API and playground, and aims to provide an open-source version of a realtime playground. We hope this tool can help accelerate the adoption and development of these advanced models in the community.
+
 ## Features
 
 ### 🎤 Real-time Voice Conversation
@@ -129,29 +133,4 @@ src/
 
 ### Available Scripts
 - `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For support and questions:
-- Check the documentation in `src/lib/README.md`
-- Review the protocol development guide in `docs/PROTOCOL_DEVELOPMENT_GUIDE.md`
-- Open an issue on GitHub
-
----
-
-Built with ❤️ using Next.js and modern web technologies.
+- `
