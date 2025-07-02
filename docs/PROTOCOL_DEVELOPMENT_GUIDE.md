@@ -1,10 +1,10 @@
-# 协议开发指南
+# Protocol Development Guide
 
-## 概述
+## Overview
 
-本指南介绍如何为语音转录应用开发新的协议支持。当前架构采用事件处理器分离的设计，使得添加新协议变得简单和可维护。
+This guide introduces how to develop new protocol support for voice transcription applications. The current architecture adopts an event processor separation design, making it simple and maintainable to add new protocols.
 
-## 架构概览
+## Architecture Overview
 
 ```
 ┌─────────────────┐    ┌─────────────────────┐    ┌─────────────────┐
@@ -24,56 +24,56 @@
                        └─────────────────┘
 ```
 
-## 开发步骤
+## Development Steps
 
-### 步骤 1: 定义协议事件类型
+### Step 1: Define Protocol Event Types
 
-在 `src/types/` 目录下创建新协议的事件类型定义：
+Create event type definitions for the new protocol in the `src/types/` directory:
 
 ```typescript
 // src/types/YourProtocolEvents.ts
 
-// 基础事件接口
+// Base event interface
 interface BaseYourEvent {
   event_id: string;
   type: string;
   timestamp: number;
 }
 
-// 客户端事件
+// Client events
 export interface YourClientEvent extends BaseYourEvent {
   type: "your.client.event";
   data: any;
 }
 
-// 服务器事件
+// Server events
 export interface YourServerEvent extends BaseYourEvent {
   type: "your.server.event";
   payload: any;
 }
 
-// 音频事件
+// Audio events
 export interface YourAudioEvent extends BaseYourEvent {
   type: "your.audio.chunk";
   audio_data: string; // base64 encoded
   sequence: number;
 }
 
-// 文本事件
+// Text events
 export interface YourTextEvent extends BaseYourEvent {
   type: "your.text.delta";
   text: string;
   is_final: boolean;
 }
 
-// 组合类型
+// Combined types
 export type YourClientEventType = YourClientEvent;
 export type YourServerEventType = YourServerEvent | YourAudioEvent | YourTextEvent;
 ```
 
-### 步骤 2: 创建协议事件处理器
+### Step 2: Create Protocol Event Processor
 
-在 `src/lib/protocols/` 目录下创建新协议的事件处理器：
+Create an event processor for the new protocol in the `src/lib/protocols/` directory:
 
 ```typescript
 // src/lib/protocols/YourProtocolEventProcessor.ts
@@ -109,7 +109,7 @@ export class YourProtocolEventProcessor extends EventProcessor {
         this.handleTextEvent(event as YourTextEvent);
         break;
       default:
-        // 触发通用事件处理器
+        // Trigger generic event processor
         this.triggerEvent(event.type, event);
     }
   }
@@ -121,7 +121,7 @@ export class YourProtocolEventProcessor extends EventProcessor {
   private handleAudioEvent(event: YourAudioEvent): void {
     this.onAudioChunk?.(event.audio_data, event.sequence);
     
-    // 转换为标准格式并触发事件
+    // Convert to standard format and trigger event
     this.triggerEvent("response.audio.delta", {
       type: "response.audio.delta",
       response_id: event.event_id,
@@ -132,7 +132,7 @@ export class YourProtocolEventProcessor extends EventProcessor {
   private handleTextEvent(event: YourTextEvent): void {
     this.onTextUpdate?.(event.text, event.is_final);
     
-    // 转换为标准格式并触发事件
+    // Convert to standard format and trigger event
     this.triggerEvent("response.text.delta", {
       type: "response.text.delta",
       response_id: event.event_id,
@@ -140,7 +140,7 @@ export class YourProtocolEventProcessor extends EventProcessor {
     });
   }
 
-  // 设置回调的方法
+  // Methods to set callbacks
   public setAudioChunkCallback(callback: (audioData: string, sequence: number) => void): void {
     this.onAudioChunk = callback;
   }
@@ -151,15 +151,15 @@ export class YourProtocolEventProcessor extends EventProcessor {
 }
 ```
 
-### 步骤 3: 扩展 ConversationFactory
+### Step 3: Extend ConversationFactory
 
-在 `src/lib/ConversationFactory.ts` 中添加新协议的工厂方法：
+Add a factory method for the new protocol in `src/lib/ConversationFactory.ts`:
 
 ```typescript
-// 在 ConversationFactory 类中添加新方法
+// Add new method in ConversationFactory class
 
 /**
- * 创建使用您的协议的对话实例
+ * Create a conversation instance using your protocol
  */
 public static async createYourProtocolConversation(
   config: ConversationFactoryConfig & {
@@ -169,14 +169,14 @@ public static async createYourProtocolConversation(
     };
   }
 ): Promise<Conversation> {
-  // 创建您的事件处理器
+  // Create your event processor
   const eventProcessor = new YourProtocolEventProcessor({
     onSendEvent: config.onSendEvent,
     onAudioChunk: config.yourEventHandlers?.onAudioChunk,
     onTextUpdate: config.yourEventHandlers?.onTextUpdate,
   });
 
-  // 设置标准事件处理器
+  // Set up standard event handlers
   if (config.eventHandlers) {
     Object.entries(config.eventHandlers).forEach(([eventType, handler]) => {
       if (handler) {
@@ -186,7 +186,7 @@ public static async createYourProtocolConversation(
     });
   }
 
-  // 创建对话实例
+  // Create conversation instance
   const conversation = await Conversation.startSession({
     url: config.url,
     audioConfig: config.audioConfig,
@@ -194,7 +194,7 @@ public static async createYourProtocolConversation(
     onSendEvent: config.onSendEvent
   });
 
-  // 设置音频处理回调
+  // Set up audio processing callback
   eventProcessor.setAudioChunkCallback((audioData: string, sequence: number) => {
     conversation.addAudioBase64Chunk(audioData);
   });
@@ -203,14 +203,14 @@ public static async createYourProtocolConversation(
 }
 ```
 
-### 步骤 4: 创建使用示例
+### Step 4: Create Usage Examples
 
 ```typescript
 // src/lib/protocols/YourProtocolExample.ts
 
 import { ConversationFactory } from '../ConversationFactory';
 
-// 使用工厂方法创建您的协议对话
+// Create your protocol conversation using factory method
 export async function createYourProtocolConversation() {
   const conversation = await ConversationFactory.createYourProtocolConversation({
     url: 'wss://your-api.example.com',
@@ -237,7 +237,7 @@ export async function createYourProtocolConversation() {
   return conversation;
 }
 
-// 手动创建方式
+// Manual creation method
 export async function createYourProtocolConversationManual() {
   const eventProcessor = new YourProtocolEventProcessor({
     onAudioChunk: (audioData, sequence) => {
@@ -262,29 +262,29 @@ export async function createYourProtocolConversationManual() {
 }
 ```
 
-## 关键设计原则
+## Key Design Principles
 
-### 1. 事件转换
-- 将协议特定的事件转换为标准格式
-- 保持与现有事件处理器的兼容性
+### 1. Event Transformation
+- Convert protocol-specific events to standard format
+- Maintain compatibility with existing event processors
 
-### 2. 音频处理
-- 确保音频数据能正确传递给 `Conversation`
-- 支持音频中断和淡出功能
+### 2. Audio Processing
+- Ensure audio data is correctly passed to `Conversation`
+- Support audio interruption and fade-out functionality
 
-### 3. 错误处理
-- 实现统一的错误处理机制
-- 提供有意义的错误信息
+### 3. Error Handling
+- Implement unified error handling mechanism
+- Provide meaningful error messages
 
-### 4. 类型安全
-- 使用 TypeScript 确保类型安全
-- 定义清晰的接口和类型
+### 4. Type Safety
+- Use TypeScript to ensure type safety
+- Define clear interfaces and types
 
-## 测试指南
+## Testing Guide
 
-### 1. 单元测试
+### 1. Unit Testing
 ```typescript
-// 测试事件处理器
+// Test event processor
 describe('YourProtocolEventProcessor', () => {
   it('should handle audio events correctly', () => {
     const processor = new YourProtocolEventProcessor();
@@ -304,9 +304,9 @@ describe('YourProtocolEventProcessor', () => {
 });
 ```
 
-### 2. 集成测试
+### 2. Integration Testing
 ```typescript
-// 测试完整流程
+// Test complete workflow
 describe('YourProtocol Integration', () => {
   it('should create conversation with your protocol', async () => {
     const conversation = await createYourProtocolConversation();
@@ -316,25 +316,25 @@ describe('YourProtocol Integration', () => {
 });
 ```
 
-## 最佳实践
+## Best Practices
 
-1. **保持一致性**: 遵循现有的命名约定和代码风格
-2. **文档化**: 为每个协议提供详细的使用文档
-3. **向后兼容**: 确保新协议不影响现有功能
-4. **性能考虑**: 避免在事件处理中进行耗时操作
-5. **错误恢复**: 实现适当的错误恢复机制
+1. **Maintain Consistency**: Follow existing naming conventions and code style
+2. **Documentation**: Provide detailed usage documentation for each protocol
+3. **Backward Compatibility**: Ensure new protocols don't affect existing functionality
+4. **Performance Considerations**: Avoid time-consuming operations in event processing
+5. **Error Recovery**: Implement appropriate error recovery mechanisms
 
-## 常见问题
+## Frequently Asked Questions
 
-### Q: 如何处理协议版本升级？
-A: 在事件处理器中添加版本检测和兼容性处理逻辑。
+### Q: How to handle protocol version upgrades?
+A: Add version detection and compatibility handling logic in the event processor.
 
-### Q: 如何支持不同的音频格式？
-A: 在音频处理回调中进行格式转换，或扩展 `AudioConfig` 接口。
+### Q: How to support different audio formats?
+A: Perform format conversion in audio processing callbacks, or extend the `AudioConfig` interface.
 
-### Q: 如何实现协议特定的认证？
-A: 在工厂方法中添加认证配置参数，在 WebSocket 连接建立前处理认证。
+### Q: How to implement protocol-specific authentication?
+A: Add authentication configuration parameters in factory methods, handle authentication before establishing WebSocket connections.
 
-## 总结
+## Summary
 
-通过遵循这个指南，您可以轻松地为应用添加新的协议支持，同时保持代码的可维护性和扩展性。每个新协议都是独立的模块，不会影响现有的功能。 
+By following this guide, you can easily add new protocol support to your application while maintaining code maintainability and extensibility. Each new protocol is an independent module that won't affect existing functionality. 
